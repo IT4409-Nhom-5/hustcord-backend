@@ -1,106 +1,43 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../user/user.schema';
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { UserService } from "../user/user.service";
+import { JwtService } from "@nestjs/jwt";
+import { UserDto } from "../user/dto/user.dto";
 import * as bcrypt from 'bcryptjs';
-import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
-import { SignOptions } from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private readonly userService: UserService, private readonly jwtService: JwtService){}
 
-  async validateUser(email: string, password: string): Promise<UserDocument | null> {
-    const user = await this.userModel.findOne({ email }).exec();
-    if (user && user.password && (await bcrypt.compare(password, user.password))) {
-      return user;
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userService.findByEmail(email);
+    if(!user) throw new NotFoundException();
+    const check = await bcrypt.compare(password, user.password);
+    if(check){
+      const {password, ... result} = user;
+      return result;
     }
     return null;
   }
 
-  async login(user: UserDocument) {
-    const tokens = await this.generateToken(user);
-    return {
-      ...tokens,
-      user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        isLocked: user.isLocked,
-      },
-    };
-  }
-
-  async register(email: string, name: string, password: string) {
-    const existing = await this.userModel.findOne({ email }).exec();
-    if (existing) {
-      throw new UnauthorizedException('Email already exists');
-    }
-
-    const hash = await bcrypt.hash(password, 10);
-    const user = new this.userModel({ email, name, password: hash });
-    await user.save();
-
-    return this.login(user);
-  }
-
-  async generateToken(user: any) {
+  async login({dataValues}) {
     const payload = {
-      sub: user._id.toString(),
-      email: user.email,
-      role: user.role,
-      isLocked: user.isLocked,
+      id: dataValues.id,
+      username: dataValues.username,
+      image: dataValues.image
     };
-
-    const accessTokenOptions: any = {
-      expiresIn: this.configService.get<string>('jwt.expiresIn') || '45m',
-    };
-
-    const refreshTokenOptions: any = {
-      expiresIn: this.configService.get<string>('jwtRefresh.expiresIn') || '7d',
-    };
-
-    const accessToken = jwt.sign(
-      payload,
-      this.configService.get<string>('jwt.secret') || 'supersecret',
-      accessTokenOptions,
-    );
-
-    const refreshToken = jwt.sign(
-      payload,
-      this.configService.get<string>('jwtRefresh.secret') || 'superrefreshsecret',
-      refreshTokenOptions,
-    );
-
     return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      statusCode: '200',
+      access_token: this.jwtService.sign(payload)
     };
   }
 
-  async refreshToken(user: any) {
-    return this.generateToken(user);
-  }
-
-  async getProfileById(userId: string) {
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+  async register(createUserDto: UserDto): Promise<any> {
+    const user = await this.userService.findByEmail(createUserDto.email);
+    if(user) throw new ConflictException('User already exists');
+    await this.userService.createUser(createUserDto);
+    return {
+      statusCode: '201',
+      message: 'User created successfully.'
     }
-
-    return {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      isLocked: user.isLocked,
-    };
   }
 }

@@ -1,99 +1,95 @@
 import {
-  Body,
   Controller,
   Post,
+  Body,
   UseGuards,
-  Get,
-  Req,
-  UnauthorizedException,
+  Request,
+  HttpCode,
+  HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { ApiTags, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LocalAuthGuard } from '../../common/guards/local-auth.guard';
-import { AuthGuard } from '@nestjs/passport';
+import { UserDto } from '../user/dto/user.dto';
+import {
+  LoginResponseDto,
+  RegisterResponseDto,
+  LoginRequestDto,
+} from './dto/auth-response.dto';
 
-@ApiTags('auth')
+@ApiTags('authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
-        displayName: { type: 'string' },
-        password: { type: 'string' },
-        phoneNumber: { type: 'string' },
-      },
-      required: ['email', 'displayName', 'password'],
-    },
+  @ApiOperation({
+    summary: 'User Login',
+    description:
+      'Authenticate user with email and password. Returns JWT access token.',
   })
-  async register(
-    @Body()
-    body: {
-      email: string;
-      displayName: string;
-      password: string;
-      phoneNumber?: string;
-    },
-  ) {
-    const result = await this.authService.register(
-      body.email,
-      body.displayName,
-      body.password,
-    );
-
-    return {
-      access_token: result.access_token,
-      refresh_token: result.refresh_token,
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        displayName: result.user.name,
-        phoneNumber: body.phoneNumber || '',
-      },
-    };
-  }
-
-  @Post('login')
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'User logged in successfully' })
   @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string' },
-        password: { type: 'string' },
-      },
-    },
+    type: LoginRequestDto,
+    description: 'User login credentials',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Login successful, returns access token',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid email or password',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
   })
   @UseGuards(LocalAuthGuard)
-  async login(@Req() req: any) {
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Request() req: any): Promise<LoginResponseDto> {
     if (!req.user) {
-      throw new UnauthorizedException('User not found');
+      throw new BadRequestException('Invalid credentials');
     }
-
     return this.authService.login(req.user);
   }
 
-  @Post('refresh')
-  @ApiOperation({ summary: 'Refresh JWT token' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
-  @UseGuards(AuthGuard('jwt-refresh'))
-  async refresh(@Req() req: any) {
-    const user = req.user;
-    return this.authService.refreshToken(user);
-  }
-
-  @Get('profile')
-  @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'User profile fetched successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  @UseGuards(AuthGuard('jwt'))
-  async getProfile(@Req() req: any) {
-    const user = req.user;
-    return this.authService.getProfileById(user.sub || user._id);
+  @ApiOperation({
+    summary: 'User Registration',
+    description: 'Register a new user account with email, username, and password.',
+  })
+  @ApiBody({
+    type: UserDto,
+    description: 'User registration details',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User registered successfully',
+    type: RegisterResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'User already exists with this email',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid registration data',
+  })
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() body: UserDto): Promise<RegisterResponseDto> {
+    if (!body.email || !body.username || !body.password) {
+      throw new BadRequestException(
+        'Email, username, and password are required',
+      );
+    }
+    return this.authService.register(body);
   }
 }

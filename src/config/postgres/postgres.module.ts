@@ -7,4 +7,4 @@ import { postgresProviders } from './postgres.config';
   providers: [...postgresProviders],
   exports: [...postgresProviders]
 })
-export class DatabaseModule {};
+export class PostgresModule {};
