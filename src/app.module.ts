@@ -7,6 +7,12 @@ import mongodbConfig from './config/mongodb.config';
 import jwtConfig from './config/jwt.config';
 import { HealthController } from './modules/health/health.controller';
 import { AuthModule } from './modules/auth/auth.module';
+import { PostgresModule } from './config/postgres/postgres.module';
+import { AuthController } from './modules/auth/auth.controller';
+import { ChannelModule } from './modules/channel/channel.module';
+import { MessageModule } from './modules/message/message.module';
+import { UserModule } from './modules/user/user.module';
+import { VideoModule } from './modules/video/video.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,9 +26,14 @@ import { AuthModule } from './modules/auth/auth.module';
       }),
       inject: [ConfigService],
     }),
+    PostgresModule,
     AuthModule,
+    ChannelModule,
+    MessageModule,
+    UserModule,
+    VideoModule,
   ],
-  controllers: [AppController, HealthController],
+  controllers: [AppController, HealthController, AuthController],
   providers: [AppService],
 })
 export class AppModule {}
