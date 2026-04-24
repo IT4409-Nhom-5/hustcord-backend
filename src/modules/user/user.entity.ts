@@ -22,30 +22,30 @@ export class User extends Model {
 
     @Unique
     @Column(DataType.STRING('100'))
-    public email: string;
+    declare email: string;
 
     @Unique
     @Column(DataType.STRING('20'))
-    public username: string;
+    declare username: string;
 
     @Column(DataType.STRING)
-    public password: string;
+    declare password: string;
 
     @Column(DataType.STRING)
-    public about: string;
+    declare about: string;
 
     @Default('https://res.cloudinary.com/dtzs4c2uv/image/upload/v1666326774/noavatar_rxbrbk.png')
     @Column(DataType.STRING)
-    public image: string;
+    declare image: string;
 
     @Column(DataType.ARRAY(DataType.UUID))
-    public friends: Array<string>;
+    declare friends: Array<string>;
 
     @Column(DataType.ARRAY(DataType.UUID))
-    public blocked: Array<string>;
+    declare blocked: Array<string>;
 
     @Column(DataType.ARRAY(DataType.UUID))
-    public requests: Array<string>;
+    declare requests: Array<string>;
 
     /* truoc khi luu user vao DB thi encrypt pw */
     @BeforeCreate

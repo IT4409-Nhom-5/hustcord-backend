@@ -7,6 +7,7 @@ import {
 import { Server } from 'socket.io';
 import { MessageService } from '../message/message.service';
 import { MessageDto } from './dto/message.dto';
+
 @WebSocketGateway({ cors: true })
 export class ChannelGateway {
   constructor(private messageService: MessageService) {}

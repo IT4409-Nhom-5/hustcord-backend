@@ -18,20 +18,20 @@ export class Channel extends Model {
     declare id: string;
 
     @Column(DataType.ARRAY(DataType.UUID()))
-    public participants: string[];
+    declare participants: string[];
 
     @Column(DataType.ARRAY(DataType.UUID()))
-    public admin: string[];
+    declare admin: string[];
 
     @Column(DataType.STRING)
-    public description: string;
+    declare description: string;
 
     @Column(DataType.ARRAY(DataType.UUID))
-    public messages: string[];
+    declare messages: string[];
 
     @Column(DataType.STRING(50))
-    public name: string;
+    declare name: string;
 
     @Column(DataType.STRING)
-    public image: string;
+    declare image: string;
 }
