@@ -9,13 +9,21 @@ export const postgresProviders = [
         useFactory: async () => {
             const sequelize = new Sequelize({
                 dialect: 'postgres',
-                // host: /* '192.168.1.75', */ 'localhost',
-                host: 'localhost',
-                port: 5432,
-                username: 'postgres',
-                password: process.env.POSTGRES_SQL_PASSWORD,
-                database: 'hustcord',
+                host: process.env.DB_HOST,
+                port: Number(process.env.DB_PORT),
+                username: process.env.DB_USERNAME,
+                password: process.env.DB_PASSWORD,
+                database: process.env.DB_NAME,
                 logging: console.log,
+                
+                dialectOptions: {
+                    ssl: {
+                        require: true,
+                        rejectUnauthorized: false,
+                    }
+                },
+                // dialectModule: require('pg'),
+
             });
             sequelize.addModels([User, Message, Channel]);
             await sequelize.sync();

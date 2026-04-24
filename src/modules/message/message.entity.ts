@@ -11,21 +11,21 @@ export class Message extends Model {
 
     @ForeignKey(() => Channel)
     @Column(DataType.UUID)
-    public channelId: string;
+    declare channelId: string;
 
     @BelongsTo(() => Channel)
-    public channel: Channel;
+    declare channel: Channel;
 
     @ForeignKey(() => User)
     @Column(DataType.UUID)
-    public userId: string;
+    declare userId: string;
 
     @BelongsTo(() => User)
-    public user: User;
+    declare user: User;
 
     @Column(DataType.STRING)
-    public text: string;
+    declare text: string;
 
     @Column(DataType.ARRAY(DataType.STRING))
-    public images: string[];
+    declare images: string[];
 }
