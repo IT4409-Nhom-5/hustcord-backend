@@ -1,10 +1,10 @@
+import mongodbConfig from './config/mongodb.config';
+import jwtConfig from './config/jwt.config';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';  
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import mongodbConfig from './config/mongodb.config';
-import jwtConfig from './config/jwt.config';
 import { HealthController } from './modules/health/health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostgresModule } from './config/postgres/postgres.module';
