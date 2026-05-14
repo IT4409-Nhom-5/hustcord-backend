@@ -7,6 +7,8 @@ export const postgresProviders = [
     {
         provide: 'SEQUELIZE',
         useFactory: async () => {
+            console.log(`[DB] Attempting to connect to: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+            
             const sequelize = new Sequelize({
                 dialect: 'postgres',
                 host: process.env.DB_HOST,
@@ -14,7 +16,7 @@ export const postgresProviders = [
                 username: process.env.DB_USERNAME,
                 password: process.env.DB_PASSWORD,
                 database: process.env.DB_NAME,
-                logging: console.log,
+                logging: false, 
                 
                 dialectOptions: {
                     ssl: {
@@ -22,19 +24,20 @@ export const postgresProviders = [
                         rejectUnauthorized: false,
                     }
                 },
-                // dialectModule: require('pg'),
-
             });
-            sequelize.addModels([User, Message, Channel]);
-            await sequelize.sync();
+
             try {
+                // Phải authenticate TRƯỚC khi sync
                 await sequelize.authenticate();
-                console.log("DB connected");
+                console.log("✅ [DB] PostgreSQL connected successfully");
+                
+                sequelize.addModels([User, Message, Channel]);
+                await sequelize.sync();
+                console.log("✅ [DB] Models synced successfully");
             } catch(err){
-                console.error("Err: ", err);
+                console.error("❌ [DB] Connection Error: ", err.message);
             }
             return sequelize;
-            
         }
     }
 ];

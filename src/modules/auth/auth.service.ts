@@ -27,17 +27,26 @@ export class AuthService {
     };
     return {
       statusCode: '200',
-      access_token: this.jwtService.sign(payload)
+      access_token: this.jwtService.sign(payload),
+      user: payload 
     };
   }
 
   async register(createUserDto: UserDto): Promise<any> {
     const user = await this.userService.findByEmail(createUserDto.email);
-    if(user) throw new ConflictException('User already exists');
-    await this.userService.createUser(createUserDto);
-    return {
-      statusCode: '201',
-      message: 'User created successfully.'
+    if(user) throw new ConflictException('Email already exists');
+    
+    try {
+      await this.userService.createUser(createUserDto);
+      return {
+        statusCode: '201',
+        message: 'User created successfully.'
+      }
+    } catch (error: any) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        throw new ConflictException('Username already exists');
+      }
+      throw error;
     }
   }
 }

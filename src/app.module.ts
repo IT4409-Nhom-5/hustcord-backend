@@ -33,7 +33,7 @@ import { VideoModule } from './modules/video/video.module';
     UserModule,
     VideoModule,
   ],
-  controllers: [AppController, HealthController, AuthController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, UseGuards, HttpStatus } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, UseGuards, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { UserService } from "./user.service";
@@ -58,6 +58,22 @@ export class UserController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - JWT token required',
   })
+  @Get('search/:username')
+  async searchUser(@Param('username') username: string) {
+    return await this.userService.findBySearch(username);
+  }
+
+  @Get(':id/friends')
+  async getFriends(@Param('id') id: string) {
+    return await this.userService.getFriends({ id });
+  }
+
+  @Post('friend')
+  @UseGuards(JwtAuthGuard)
+  async setFriend(@Body() body: { id: string, otherId: string, status: boolean }) {
+    return await this.userService.setFriend(body);
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put(':id')

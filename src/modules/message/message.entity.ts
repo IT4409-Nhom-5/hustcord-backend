@@ -20,8 +20,15 @@ export class Message extends Model {
     @Column(DataType.UUID)
     declare userId: string;
 
-    @BelongsTo(() => User)
+    @BelongsTo(() => User, 'userId')
     declare user: User;
+
+    @ForeignKey(() => User)
+    @Column(DataType.UUID)
+    declare recipientId: string;
+
+    @BelongsTo(() => User, 'recipientId')
+    declare recipient: User;
 
     @Column(DataType.STRING)
     declare text: string;

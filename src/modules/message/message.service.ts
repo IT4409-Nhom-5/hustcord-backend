@@ -35,18 +35,50 @@ export class MessageService {
     }
   }
 
-  async addMessage({ text, images, channelId, userId }: MessageDto) {
+  async getDirectMessages({ userId, recipientId }) {
     try {
-      const message = await Message.create({ text, images, channelId, userId });
-      await Channel.update(
-        { messages: sequelize.fn('array_append', sequelize.col('messages'), message.id) },
-        { where: { id: message.channelId } }
-      );
+      const messages = await Message.findAll({
+        where: {
+          [sequelize.Op.or]: [
+            { userId: userId, recipientId: recipientId },
+            { userId: recipientId, recipientId: userId }
+          ]
+        },
+        order: [['createdAt', 'ASC']],
+        include: [
+          { model: User, as: 'user' }
+        ]
+      });
+      return messages;
+    } catch (error) {
       return {
-        statusCode: '201',
-        message: 'Message created successfully.'
+        statusCode: 400,
+        message: error
+      };
+    }
+  }
+
+  async addMessage({ text, images, channelId, userId, recipientId }: MessageDto) {
+    try {
+      const message = await Message.create({ text, images, channelId, userId, recipientId });
+      
+      // Chỉ cập nhật bảng Channel nếu là tin nhắn trong kênh
+      if (channelId) {
+        await Channel.update(
+          { messages: sequelize.fn('array_append', sequelize.col('messages'), message.id) },
+          { where: { id: message.channelId } }
+        );
+      }
+      
+      const messageWithUser = await Message.findByPk(message.id, { include: ['user'] });
+
+      return {
+        statusCode: 201,
+        message: 'Message created successfully.',
+        data: messageWithUser
       };
     } catch (error) {
+      console.error(">>> ERROR CREATING MESSAGE IN DB:", error);
       return {
         statusCode: 400,
         message: error

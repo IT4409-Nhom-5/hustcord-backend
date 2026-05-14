@@ -16,8 +16,15 @@ export class ChannelGateway {
   server: Server;
 
   @SubscribeMessage('chat')
-  handleMessage(@MessageBody() message: MessageDto) {
-    this.server.emit('chat', message);
-    this.messageService.addMessage(message);
+  handleMessage(@MessageBody() message: any) {
+    this.server.emit('MESSAGE_CREATE', message);
+  }
+
+  emitMessage(message: any) {
+    if (this.server) {
+      this.server.emit('MESSAGE_CREATE', message);
+    } else {
+      console.warn('[WS] Server not initialized yet');
+    }
   }
 }
