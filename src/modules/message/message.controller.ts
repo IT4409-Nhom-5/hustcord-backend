@@ -38,7 +38,6 @@ export class MessageController {
   async createMessage(@Body() body: MessageDto) {
     const result = await this.messageService.addMessage(body);
 
-    // Phát tin nhắn qua Socket để bên kia thấy ngay (Dùng == hoặc so sánh với số 201)
     if (result.statusCode == 201 && result.data) {
       this.channelGateway.emitMessage(result.data);
     }

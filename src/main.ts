@@ -6,7 +6,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Bật CORS để FE (Vite port 5173) có thể gọi API
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:3001'],
     credentials: true,
