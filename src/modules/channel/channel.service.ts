@@ -59,10 +59,10 @@ export class ChannelService {
     }
   }
 
-  async createChannel({participants, admins, image, name, description}: ChannelDto) {
+  async createChannel({participants, admins, image, name, description, guildId}: ChannelDto) {
     try {
-      const channel = await Channel.create({participants, admins, image, name, description});
-      console.log(channel)
+      const channel = await Channel.create({participants, admins, image, name, description, guildId});
+      console.log('Channel Created:', channel.id, 'in Guild:', guildId);
       return {
         statusCode: '201',
         message: 'Channel created successfully.',
@@ -93,10 +93,16 @@ export class ChannelService {
 
   async deleteChannel(id: string) {
     try {
+      const channel = await Channel.findByPk(id);
+      if (!channel) return { statusCode: '404', message: 'Channel not found.' };
+      
+      const guildId = channel.guildId;
       await Channel.destroy({ where: { id } });
+      
       return {
         statusCode: '200',
-        message: 'Channel deleted successfully.'
+        message: 'Channel deleted successfully.',
+        guildId
       };
     } catch {
       return {

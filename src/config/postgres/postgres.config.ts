@@ -7,7 +7,6 @@ export const postgresProviders = [
     {
         provide: 'SEQUELIZE',
         useFactory: async () => {
-            console.log(">>> Connecting to DB:", process.env.DB_HOST);
             const sequelize = new Sequelize({
                 dialect: 'postgres',
                 host: process.env.DB_HOST,
@@ -33,14 +32,10 @@ export const postgresProviders = [
             sequelize.addModels([User, Message, Channel]);
             
             try {
-                console.log(">>> Authenticating DB...");
                 await sequelize.authenticate();
-                console.log(">>> DB connected (Authenticated)");
-                
-                // Bỏ qua lệnh sync() vì đã có sẵn bảng trên Supabase
-                console.log(">>> Skipping Sync (Schema is already up-to-date)");
+                await sequelize.sync({ alter: true });
             } catch(err){
-                console.error(">>> DB Connection Error: ", err);
+                throw err;
             }
             return sequelize;
             

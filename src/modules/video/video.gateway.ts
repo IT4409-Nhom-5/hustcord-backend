@@ -1,10 +1,4 @@
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
-} from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { VideoService } from './video.service';
 
@@ -14,6 +8,8 @@ export class VideoGateway {
   server: Server;
 
   private userSockets: Map<string, string> = new Map(); // userId -> socketId
+  private socketToUser: Map<string, string> = new Map(); // socketId -> userId
+  private userRooms: Map<string, string> = new Map(); // socketId -> channelId
 
   constructor(private videoService: VideoService) {}
 
@@ -22,13 +18,18 @@ export class VideoGateway {
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`[Video] Client disconnected: ${client.id}`);
-    for (const [userId, socketId] of this.userSockets.entries()) {
-      if (socketId === client.id) {
-        this.userSockets.delete(userId);
-        break;
-      }
+    const userId = this.socketToUser.get(client.id);
+    const channelId = this.userRooms.get(client.id);
+
+    if (userId && channelId) {
+      console.log(`[Video] User ${userId} disconnected from room ${channelId}`);
+      client.to(`voice-${channelId}`).emit('user-left-voice', { userId });
     }
+
+    this.socketToUser.delete(client.id);
+    this.userRooms.delete(client.id);
+    if (userId) this.userSockets.delete(userId);
+    console.log(`[Video] Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('register')
@@ -36,9 +37,10 @@ export class VideoGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() userId: string,
   ) {
+    if (!userId) return;
     this.userSockets.set(userId, client.id);
-    console.log(`[Video] User ${userId} registered with socket ${client.id}`);
-    client.emit('registered', { userId });
+    this.socketToUser.set(client.id, userId);
+    console.log(`[Video] User ${userId} registered. Total online: ${this.userSockets.size}`);
   }
 
   @SubscribeMessage('video-call')
@@ -46,16 +48,12 @@ export class VideoGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ) {
-    const { callId, to } = data;
+    const { to, type, callId, from } = data;
     const toSocket = this.userSockets.get(to);
-
+    
+    
     if (toSocket) {
-      this.server.to(toSocket).emit('incoming-call', {
-        callId,
-        from: data.from,
-        channelId: data.channelId,
-      });
-      console.log(`[Video] Call ${callId} initiated to user ${to}`);
+      this.server.to(toSocket).emit('video-call', { from, type, callId });
     } else {
       client.emit('error', { message: `User ${to} is not online` });
     }
@@ -67,108 +65,89 @@ export class VideoGateway {
     @MessageBody() data: any,
   ) {
     const { callId, to, from } = data;
-    const fromSocket = this.userSockets.get(from);
+    const fromSocket = this.userSockets.get(from); // from là người gọi ban đầu
 
     if (fromSocket) {
       this.server.to(fromSocket).emit('call-accepted', {
         callId,
-        from,
-        to,
+        from: to, // Người nghe gửi lại cho người gọi
+        to: from,
       });
-      console.log(`[Video] Call ${callId} accepted by user ${to}`);
+    } else {
     }
   }
 
   @SubscribeMessage('call-rejected')
-  handleCallRejected(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: any,
-  ) {
+  handleCallRejected(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     const { callId, to, from } = data;
     const fromSocket = this.userSockets.get(from);
-
     if (fromSocket) {
-      this.server.to(fromSocket).emit('call-rejected', {
-        callId,
-        from,
-        to,
-      });
-      console.log(`[Video] Call ${callId} rejected by user ${to}`);
-    }
-  }
-
-  @SubscribeMessage('offer')
-  handleOffer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: any,
-  ) {
-    const { callId, to, from, offer } = data;
-    const toSocket = this.userSockets.get(to);
-
-    this.videoService.storeOffer(callId, offer);
-
-    if (toSocket) {
-      this.server.to(toSocket).emit('offer', {
-        callId,
-        from,
-        offer,
-      });
-      console.log(`[Video] Offer sent for call ${callId}`);
-    }
-  }
-
-  @SubscribeMessage('answer')
-  handleAnswer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: any,
-  ) {
-    const { callId, to, from, answer } = data;
-    const toSocket = this.userSockets.get(to);
-
-    this.videoService.storeAnswer(callId, answer);
-
-    if (toSocket) {
-      this.server.to(toSocket).emit('answer', {
-        callId,
-        from,
-        answer,
-      });
-      console.log(`[Video] Answer sent for call ${callId}`);
-    }
-  }
-
-  @SubscribeMessage('ice-candidate')
-  handleIceCandidate(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: any,
-  ) {
-    const { callId, to, from, candidate } = data;
-    const toSocket = this.userSockets.get(to);
-
-    if (toSocket) {
-      this.server.to(toSocket).emit('ice-candidate', {
-        callId,
-        from,
-        candidate,
-      });
+      this.server.to(fromSocket).emit('call-rejected', { callId, from: to, to: from });
     }
   }
 
   @SubscribeMessage('end-call')
-  handleEndCall(
+  handleEndCall(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
+    const { callId, to, from } = data;
+    const toSocket = this.userSockets.get(to) || this.userSockets.get(from);
+    if (toSocket) {
+      this.server.to(toSocket).emit('end-call', { callId, from });
+    }
+  }
+
+  @SubscribeMessage('join-voice')
+  handleJoinVoice(@ConnectedSocket() client: Socket, @MessageBody() data: { channelId: string; userId: string; username: string }) {
+    const { channelId, userId, username } = data;
+    client.join(`voice-${channelId}`);
+    this.userRooms.set(client.id, channelId); // Lưu lại phòng user tham gia
+    this.userSockets.set(userId, client.id);
+    this.socketToUser.set(client.id, userId);
+
+    client.to(`voice-${channelId}`).emit('user-joined-voice', { 
+      userId, 
+      username, 
+      socketId: client.id,
+      channelId
+    });
+    console.log(`[Voice] User ${username} joined room ${channelId}`);
+  }
+
+  @SubscribeMessage('leave-voice')
+  handleLeaveVoice(@ConnectedSocket() client: Socket, @MessageBody() data: { channelId: string; userId: string }) {
+    const { channelId, userId } = data;
+    client.leave(`voice-${channelId}`);
+    this.userRooms.delete(client.id);
+    client.to(`voice-${channelId}`).emit('user-left-voice', { userId });
+    console.log(`[Voice] User ${userId} left room ${channelId}`);
+  }
+
+  @SubscribeMessage('voice-signal')
+  handleVoiceSignal(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ) {
-    const { callId, to, from } = data;
-    const toSocket = this.userSockets.get(to);
+    const { to, signal, channelId } = data;
+    const fromUserId = this.socketToUser.get(client.id);
+    const fromId = fromUserId || data.from;
 
-    if (toSocket) {
-      this.server.to(toSocket).emit('call-ended', {
-        callId,
-        from,
+    // 1. Ưu tiên gửi đích danh (Point-to-Point)
+    if (to) {
+      const targetSocketId = this.userSockets.get(to) || to;
+      this.server.to(targetSocketId).emit('voice-signal', { 
+        ...data, 
+        from: fromId,
+        fromSocketId: client.id 
       });
+      return;
     }
 
-    console.log(`[Video] Call ${callId} ended`);
+    // 2. Chỉ phát sóng cho cả phòng nếu không có người nhận cụ thể (Broadcast)
+    if (channelId) {
+      client.to(`voice-${channelId}`).emit('voice-signal', {
+        ...data,
+        from: fromId,
+        fromSocketId: client.id
+      });
+    }
   }
 }

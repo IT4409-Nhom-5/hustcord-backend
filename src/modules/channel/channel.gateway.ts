@@ -29,6 +29,28 @@ export class ChannelGateway {
     }
   }
 
+  emitChannelCreate(channel: any) {
+    if (this.server) {
+      this.server.emit('CHANNEL_CREATE', channel);
+    }
+  }
+
+  emitGuildCreate(guild: any) {
+    if (this.server) {
+      this.server.emit('GUILD_CREATE', guild);
+    }
+  }
+
+  @SubscribeMessage('sync-guild')
+  handleSyncGuild(@MessageBody() guild: any) {
+    this.server.emit('sync-guild', guild);
+  }
+
+  @SubscribeMessage('sync-delete-guild')
+  handleSyncDeleteGuild(@MessageBody() data: any) {
+    this.server.emit('sync-delete-guild', data);
+  }
+
   @SubscribeMessage('chat')
   handleMessage(@MessageBody() message: MessageDto) {
     this.server.emit('chat', message);

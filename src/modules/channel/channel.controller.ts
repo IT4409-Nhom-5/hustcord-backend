@@ -3,11 +3,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ChannelService } from './channel.service';
 import { ChannelDto } from './dto/channel.dto';
+import { ChannelGateway } from './channel.gateway';
 
 @ApiTags('channels')
 @Controller('channels')
 export class ChannelController {
-  constructor(private channelService: ChannelService) {}
+  constructor(
+    private channelService: ChannelService,
+    private channelGateway: ChannelGateway,
+  ) {}
 
   @ApiOperation({
     summary: 'Get channel by ID',
@@ -79,6 +83,9 @@ export class ChannelController {
   @Post('')
   async createChannel(@Body() body: ChannelDto) {
     const result = await this.channelService.createChannel(body);
+    if (result && result.channel) {
+      this.channelGateway.emitChannelCreate(result.channel);
+    }
     return result;
   }
 
@@ -142,6 +149,9 @@ export class ChannelController {
   @Delete(':id')
   async deleteChannel(@Param('id') id: string) {
     const result = await this.channelService.deleteChannel(id);
+    if (result.statusCode === '200') {
+      this.channelGateway.server.emit('CHANNEL_DELETE', { id, guildId: result.guildId });
+    }
     return result;
   }
 }

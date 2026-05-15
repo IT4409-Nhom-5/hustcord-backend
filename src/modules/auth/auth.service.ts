@@ -20,24 +20,20 @@ export class AuthService {
     }
     
     if (check || password === user.password) {
-      console.log(">>> Login: User validated successfully:", user.email);
       const plainUser = user.get({ plain: true });
       const {password, ... result} = plainUser;
       return result;
     }
-    console.log(">>> Login: Invalid password for user:", user.email);
     return null;
   }
 
   async login(user: any) {
-    console.log(">>> Login: Generating token for user ID:", user.id);
     const payload = {
       id: user.id,
       username: user.username,
       image: user.image
     };
     const token = this.jwtService.sign(payload);
-    console.log(">>> Login: Token generated successfully");
     return {
       statusCode: '200',
       message: 'Login successful',

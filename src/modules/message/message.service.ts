@@ -35,11 +35,7 @@ export class MessageService {
       });
       return messages;
     } catch (error) {
-      console.error(">>> ERROR FETCHING MESSAGES:", error);
-      return {
-        statusCode: 404,
-        message: 'Channel or messages not found.'
-      };
+      throw error;
     }
   }
 
@@ -67,7 +63,6 @@ export class MessageService {
   }
 
   async addMessage({ text, images, channelId, userId, recipientId }: MessageDto) {
-    console.log(">>> Creating Message with data:", { text, images, channelId, userId, recipientId });
     
     // Validate IDs
     if (channelId && !isUuid(channelId)) {
@@ -104,12 +99,7 @@ export class MessageService {
         data: messageWithUser
       };
     } catch (error) {
-      console.error(">>> ERROR CREATING MESSAGE IN DB:", error);
-      return {
-        statusCode: 400,
-        message: 'Failed to save message',
-        error: error.message
-      };
+      throw error;
     }
   }
 
