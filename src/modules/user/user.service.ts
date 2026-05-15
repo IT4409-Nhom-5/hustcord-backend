@@ -23,10 +23,12 @@ export class UserService {
     }
 
     async createUser({email, username, password}: UserDto): Promise<any> {
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
             email,
             username,
-            password
+            password: hashedPassword
         });
         return user;
     }
@@ -45,18 +47,25 @@ export class UserService {
 
     async getFriends({id}) {
         try{
+            const user = await User.findByPk(id);
+            if (!user) return { statusCode: '404', message: 'User not found.' };
+            
             const friends: User[] = [];
-            const friendIds = (await User.findByPk(id)).friends;
+            const friendIds = user.friends || []; // Đảm bảo không bị null
+            
             for(let i = 0; i < friendIds.length; ++i){
-                const user = (await User.findByPk(friendIds[i]));
-                friends.push(user);
+                const friend = await User.findByPk(friendIds[i], {
+                    attributes: { exclude: ['password'] } // Không gửi mật khẩu về frontend
+                });
+                if (friend) friends.push(friend);
             }
-            return{
+            return {
                 statusCode: '200',
                 friends 
             };
         }catch(err){
-            return{
+            console.error("GetFriends Error:", err);
+            return {
                 statusCode: '404',
                 message: 'Friends not found.'
             };
@@ -85,22 +94,22 @@ export class UserService {
       };
 
     if (status) {
-      this.setRequest({ id:otherId, otherId:id, status: false });
+      await this.setRequest({ id: otherId, otherId: id, status: false });
 
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_append', sequelize.col('friends'), otherId) },
         { where: { id } }
       );
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_append', sequelize.col('friends'), id) },
         { where: { id: otherId } }
       );
     } else {
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_remove', sequelize.col('friends'), otherId) },
         { where: { id } }
       );
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_remove', sequelize.col('friends'), id) },
         { where: { id: otherId } }
       );
@@ -160,12 +169,12 @@ export class UserService {
         };
 
         if (status) {
-        User.update(
+        await User.update(
             { requests: sequelize.fn('array_append', sequelize.col('requests'), id) },
             { where: { id:otherId } }
         );
         } else {
-        User.update(
+        await User.update(
             { requests: sequelize.fn('array_remove', sequelize.col('requests'), id) },
             { where: { id:otherId } }
         );
@@ -209,19 +218,19 @@ export class UserService {
             message: 'This user has already been blocked.'
         };
 
-        this.setRequest({ id, otherId, status: false });
+        await this.setRequest({ id, otherId, status: false });
         if (status) {
         await this.setFriend({ id, otherId, status: false });
         await this.setRequest({ id, otherId, status: false });
 
-        User.update(
+        await User.update(
             { blocked: sequelize.fn('array_append', sequelize.col('blocked'), otherId) },
             {
             where: { id }
             }
         );
         } else {
-        User.update(
+        await User.update(
             { blocked: sequelize.fn('array_remove', sequelize.col('blocked'), otherId) },
             {
             where: { id }

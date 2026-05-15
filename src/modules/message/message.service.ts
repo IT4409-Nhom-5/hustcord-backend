@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
+import { validate as isUuid } from 'uuid';
 import sequelize from 'sequelize';
 import { Channel } from '../channel/channel.entity';
 import { User } from '../user/user.entity';
@@ -9,7 +10,7 @@ import { Message } from './message.entity';
 export class MessageService {
   async getMessage({ id }) {
     try {
-      const message = await Message.findByPk(id);
+      const message = await Message.findByPk(id, { include: [User] });
       return message;
     } catch (error) {
       return {
@@ -20,36 +21,94 @@ export class MessageService {
   }
 
   async getMessagesByChannel({ id }) {
+    if (!id || !isUuid(id)) {
+      return {
+        statusCode: 400,
+        message: 'Invalid channel ID format. Must be a UUID.'
+      };
+    }
     try {
       const messages = await Message.findAll({
         where: { channelId: id },
         order: [['createdAt', 'ASC']],
-        include: User
+        include: [{ model: User, as: 'user' }]
       });
       return messages;
     } catch (error) {
+      console.error(">>> ERROR FETCHING MESSAGES:", error);
       return {
-        statusCode: '404',
-        message: 'Message not found.'
+        statusCode: 404,
+        message: 'Channel or messages not found.'
       };
     }
   }
 
-  async addMessage({ text, images, channelId, userId }: MessageDto) {
+  async getDirectMessages({ userId, recipientId }) {
     try {
-      const message = await Message.create({ text, images, channelId, userId });
-      await Channel.update(
-        { messages: sequelize.fn('array_append', sequelize.col('messages'), message.id) },
-        { where: { id: message.channelId } }
-      );
-      return {
-        statusCode: '201',
-        message: 'Message created successfully.'
-      };
+      const messages = await Message.findAll({
+        where: {
+          [sequelize.Op.or]: [
+            { userId: userId, recipientId: recipientId },
+            { userId: recipientId, recipientId: userId }
+          ]
+        },
+        order: [['createdAt', 'ASC']],
+        include: [
+          { model: User, as: 'user' }
+        ]
+      });
+      return messages;
     } catch (error) {
       return {
         statusCode: 400,
         message: error
+      };
+    }
+  }
+
+  async addMessage({ text, images, channelId, userId, recipientId }: MessageDto) {
+    console.log(">>> Creating Message with data:", { text, images, channelId, userId, recipientId });
+    
+    // Validate IDs
+    if (channelId && !isUuid(channelId)) {
+       return { statusCode: 400, message: 'Invalid channelId format' };
+    }
+    if (!isUuid(userId)) {
+       return { statusCode: 400, message: 'Invalid userId format' };
+    }
+    if (recipientId && !isUuid(recipientId)) {
+       return { statusCode: 400, message: 'Invalid recipientId format' };
+    }
+
+    try {
+      const message = await Message.create({ 
+        text, 
+        images: images || [], // Đảm bảo luôn là mảng
+        channelId: channelId || null, 
+        userId, 
+        recipientId: recipientId || null 
+      });
+      
+      if (channelId) {
+        await Channel.update(
+          { messages: sequelize.fn('array_append', sequelize.col('messages'), message.id) },
+          { where: { id: message.channelId } }
+        );
+      }
+      
+      const messageWithUser = await Message.findByPk(message.id, { include: ['user'] });
+
+      return {
+        statusCode: 201,
+        message: 'Message created successfully.',
+        data: messageWithUser
+      };
+    } catch (error) {
+      console.error(">>> ERROR CREATING MESSAGE IN DB:", error);
+      return {
+        statusCode: 400,
+        message: 'Failed to save message',
+        error: error.message
       };
     }
   }

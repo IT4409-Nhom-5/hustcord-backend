@@ -8,12 +8,26 @@ import { Server } from 'socket.io';
 import { MessageService } from '../message/message.service';
 import { MessageDto } from './dto/message.dto';
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({ 
+  cors: {
+    origin: '*',
+  },
+  transports: ['websocket', 'polling']
+})
 export class ChannelGateway {
   constructor(private messageService: MessageService) {}
 
   @WebSocketServer()
   server: Server;
+
+  // Hàm hỗ trợ để phát tin nhắn từ Controller
+  emitMessage(message: any) {
+    if (this.server) {
+      this.server.emit('MESSAGE_CREATE', message);
+    } else {
+      console.warn('[WS] Server not initialized yet');
+    }
+  }
 
   @SubscribeMessage('chat')
   handleMessage(@MessageBody() message: MessageDto) {

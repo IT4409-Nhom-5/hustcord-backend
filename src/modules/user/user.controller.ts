@@ -58,10 +58,29 @@ export class UserController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - JWT token required',
   })
-  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   async updateUser(@Param('id') id: string, @Body() body: UserDto) {
     return await this.userService.updateUser({ ...body, id });
+  }
+
+  @Get(':id/friends')
+  async getFriends(@Param('id') id: string) {
+    return await this.userService.getFriends({ id });
+  }
+
+  @Put('friend/add')
+  async setFriend(@Body() body: any) {
+    return await this.userService.setFriend(body);
+  }
+
+  @Put('friend/request')
+  async setRequest(@Body() body: any) {
+    return await this.userService.setRequest(body);
+  }
+
+  @Put('friend/block')
+  async setBlocked(@Body() body: any) {
+    return await this.userService.setBlocked(body);
   }
 }
