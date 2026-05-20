@@ -4,6 +4,7 @@ import { Sequelize as sequelize } from "sequelize";
 import { Op } from "sequelize";
 import { UserDto } from "./dto/user.dto";
 import { User } from "./user.entity";
+import * as bcrypt from 'bcryptjs';
 @Injectable()
 export class UserService {
     

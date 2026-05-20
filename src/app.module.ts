@@ -17,15 +17,15 @@ import { VideoModule } from './modules/video/video.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [mongodbConfig, jwtConfig],
+      load: [jwtConfig],
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get('mongodb.uri'),
-      }),
-      inject: [ConfigService],
-    }),
+    // MongooseModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: (configService: ConfigService) => ({
+    //     uri: configService.get('mongodb.uri'),
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     PostgresModule,
     AuthModule,
     ChannelModule,

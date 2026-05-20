@@ -47,14 +47,14 @@ export class User extends Model {
     @Column(DataType.ARRAY(DataType.UUID))
     declare requests: Array<string>;
 
-    /* truoc khi luu user vao DB thi encrypt pw */
-    @BeforeCreate
-    // @BeforeUpdate // chua can do dang test
-    static async hashPassword(user: User) {
-        if(user) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(user.getDataValue('password'), salt);
-            return user.setDataValue('password', hashedPassword);
-        }
-    }
+    // /* truoc khi luu user vao DB thi encrypt pw  -- dang loi o day nen doi co che hash trong service*/
+    // @BeforeCreate
+    // // @BeforeUpdate // chua can do dang test
+    // static async hashPassword(user: User) {
+    //     if(user) {
+    //         const salt = await bcrypt.genSalt(10);
+    //         const hashedPassword = await bcrypt.hash(user.getDataValue('password'), salt);
+    //         return user.setDataValue('password', hashedPassword);
+    //     }
+    // }
 }

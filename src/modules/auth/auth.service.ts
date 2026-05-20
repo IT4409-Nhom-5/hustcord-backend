@@ -6,25 +6,38 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService, private readonly jwtService: JwtService){}
+  constructor(private readonly userService: UserService, private readonly jwtService: JwtService) { }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userService.findByEmail(email);
-    if(!user) throw new NotFoundException();
-    const check = await bcrypt.compare(password, user.password);
-    if(check){
-      const {password, ... result} = user;
-      return result;
-    }
-    return null;
-  }
 
-  async login({dataValues}) {
+    if (!user) {
+      console.log('User not found');
+      return null;
+    }
+
+    console.log('User found, comparing password...');   // debug
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    console.log('Password match result:', isMatch);     // debug quan trọng
+
+    if (!isMatch) {
+      console.log('Invalid password');
+      return null;
+    }
+
+    const userData = user.get({ plain: true });
+    const { password: _, ...result } = userData;
+    return result;
+  }
+async login(user: any) {
     const payload = {
-      id: dataValues.id,
-      username: dataValues.username,
-      image: dataValues.image
+      id: user.id,
+      username: user.username,
+      image: user.image
     };
+    
     return {
       statusCode: '200',
       access_token: this.jwtService.sign(payload)
@@ -33,11 +46,21 @@ export class AuthService {
 
   async register(createUserDto: UserDto): Promise<any> {
     const user = await this.userService.findByEmail(createUserDto.email);
-    if(user) throw new ConflictException('User already exists');
-    await this.userService.createUser(createUserDto);
+
+    if (user) {
+      throw new ConflictException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    await this.userService.createUser({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
     return {
       statusCode: '201',
-      message: 'User created successfully.'
-    }
+      message: 'User created successfully.',
+    };
   }
 }
