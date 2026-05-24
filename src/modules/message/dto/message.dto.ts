@@ -19,4 +19,8 @@ export class MessageDto {
   @IsArray()
   @IsString({ each: true })
   images: string[];
+
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
 }

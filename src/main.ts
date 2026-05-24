@@ -2,15 +2,25 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    origin: true,
     credentials: true,
   });
-
+  /* 
+  app.enableCors({
+  origin: ['http://127.0.0.1:5174', 'http://localhost:5174'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  credentials: true,
+});
+  */
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

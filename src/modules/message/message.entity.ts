@@ -35,4 +35,23 @@ export class Message extends Model {
 
     @Column(DataType.ARRAY(DataType.STRING))
     declare images: string[];
+
+    @ForeignKey(() => Message)
+    @Column(DataType.UUID)
+    declare parentId: string;
+
+    @BelongsTo(() => Message, 'parentId')
+    declare parent: Message;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        defaultValue: false
+    })
+    declare isRecalled: boolean;
+
+    @Column({
+        type: DataType.JSONB,
+        defaultValue: []
+    })
+    declare reactions: any[];
 }

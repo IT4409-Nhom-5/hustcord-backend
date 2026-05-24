@@ -21,7 +21,7 @@ export class Channel extends Model {
     declare participants: string[];
 
     @Column(DataType.ARRAY(DataType.UUID()))
-    declare admin: string[];
+    declare admins: string[];
 
     @Column(DataType.STRING)
     declare description: string;
@@ -34,4 +34,7 @@ export class Channel extends Model {
 
     @Column(DataType.STRING)
     declare image: string;
+
+    @Column(DataType.UUID)
+    declare guildId: string;
 }

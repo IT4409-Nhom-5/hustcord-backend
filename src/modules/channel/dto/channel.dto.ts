@@ -20,4 +20,8 @@ export class ChannelDto{
     @IsOptional()
     @IsString()
     description:string;
-}
+
+    @IsOptional()
+    @IsString()
+    guildId?: string;
+}

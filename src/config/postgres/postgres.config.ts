@@ -32,7 +32,7 @@ export const postgresProviders = [
                 console.log("✅ [DB] PostgreSQL connected successfully");
                 
                 sequelize.addModels([User, Message, Channel]);
-                await sequelize.sync();
+                await sequelize.sync({ alter: true });
                 console.log("✅ [DB] Models synced successfully");
             } catch(err){
                 console.error("❌ [DB] Connection Error: ", err.message);

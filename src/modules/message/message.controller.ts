@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Inject, forwardRef } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Inject, forwardRef, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { MessageService } from './message.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -56,8 +56,29 @@ export class MessageController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deleteMessage(@Param('id') id: string) {
-    const result = await this.messageService.deleteMessage({ id });
+  async deleteMessage(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user.id;
+    const result = await this.messageService.deleteMessage({ id, userId });
+    
+    if (result.statusCode == 200 && result.data) {
+      this.channelGateway.emitMessageUpdate(result.data);
+    }
+    
+    return result;
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/react')
+  async toggleReaction(@Param('id') id: string, @Body('emoji') emoji: string, @Req() req: any) {
+    const userId = req.user.id;
+    const username = req.user.username;
+    const result = await this.messageService.toggleReaction({ id, emoji, userId, username });
+
+    if (result.statusCode == 200 && result.data) {
+      this.channelGateway.emitMessageUpdate(result.data);
+    }
+
     return result;
   }
 }

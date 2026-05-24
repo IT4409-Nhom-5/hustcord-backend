@@ -27,4 +27,12 @@ export class ChannelGateway {
       console.warn('[WS] Server not initialized yet');
     }
   }
+
+  emitMessageUpdate(message: any) {
+    if (this.server) {
+      this.server.emit('MESSAGE_UPDATE', message);
+    } else {
+      console.warn('[WS] Server not initialized yet');
+    }
+  }
 }

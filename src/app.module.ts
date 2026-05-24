@@ -13,25 +13,28 @@ import { ChannelModule } from './modules/channel/channel.module';
 import { MessageModule } from './modules/message/message.module';
 import { UserModule } from './modules/user/user.module';
 import { VideoModule } from './modules/video/video.module';
+import { MediaModule } from './modules/media/media.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [mongodbConfig, jwtConfig],
+      load: [jwtConfig],
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get('mongodb.uri'),
-      }),
-      inject: [ConfigService],
-    }),
+    // MongooseModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: (configService: ConfigService) => ({
+    //     uri: configService.get('mongodb.uri'),
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     PostgresModule,
     AuthModule,
     ChannelModule,
     MessageModule,
     UserModule,
     VideoModule,
+    MediaModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
