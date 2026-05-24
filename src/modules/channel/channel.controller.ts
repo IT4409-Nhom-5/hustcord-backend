@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards, Delete, Put, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards, Delete, Put, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ChannelService } from './channel.service';
@@ -7,7 +7,7 @@ import { ChannelDto } from './dto/channel.dto';
 @ApiTags('channels')
 @Controller('channels')
 export class ChannelController {
-  constructor(private channelService: ChannelService) {}
+  constructor(private channelService: ChannelService) { }
 
   @ApiOperation({
     summary: 'Get channel by ID',
@@ -144,4 +144,18 @@ export class ChannelController {
     const result = await this.channelService.deleteChannel(id);
     return result;
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/leave')
+  async leaveChannel(
+    @Param('id') channelId: string,
+    @Req() req,
+  ) {
+    return this.channelService.leaveChannel(
+      channelId,
+      req.user.id,
+    );
+  }
+  
 }

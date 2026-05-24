@@ -88,20 +88,20 @@ export class UserService {
     if (status) {
       this.setRequest({ id:otherId, otherId:id, status: false });
 
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_append', sequelize.col('friends'), otherId) },
         { where: { id } }
       );
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_append', sequelize.col('friends'), id) },
         { where: { id: otherId } }
       );
     } else {
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_remove', sequelize.col('friends'), otherId) },
         { where: { id } }
       );
-      User.update(
+      await User.update(
         { friends: sequelize.fn('array_remove', sequelize.col('friends'), id) },
         { where: { id: otherId } }
       );

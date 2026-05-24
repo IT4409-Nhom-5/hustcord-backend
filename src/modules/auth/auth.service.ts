@@ -16,11 +16,11 @@ export class AuthService {
       return null;
     }
 
-    console.log('User found, comparing password...');   // debug
+    // console.log('User found, comparing password...');   // debug
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    console.log('Password match result:', isMatch);     // debug quan trọng
+    // console.log('Password match result:', isMatch);     // debug quan trọng
 
     if (!isMatch) {
       console.log('Invalid password');
@@ -31,16 +31,26 @@ export class AuthService {
     const { password: _, ...result } = userData;
     return result;
   }
-async login(user: any) {
+
+  async login(user: any) {
     const payload = {
       id: user.id,
       username: user.username,
+      email: user.email,
+      role: user.role,
       image: user.image
     };
-    
+
     return {
       statusCode: '200',
-      access_token: this.jwtService.sign(payload)
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+      }
     };
   }
 
