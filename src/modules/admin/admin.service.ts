@@ -18,69 +18,70 @@ export class AdminService {
             };
         }
     }
-      async deleteUser(id: string) {
-    await User.destroy({
-      where: { id },
-    });
+    
+    async deleteUser(id: string) {
+        await User.destroy({
+            where: { id },
+        });
 
-    return {
-      message: 'User deleted successfully.',
-    };
-  }
+        return {
+            message: 'User deleted successfully.',
+        };
+    }
 
-  async changeUserRole(
-    id: string,
-    role: 'user' | 'admin',
-  ) {
-    await User.update(
-      { role },
-      { where: { id } },
-    );
+    async changeUserRole(
+        id: string,
+        role: 'user' | 'admin',
+    ) {
+        await User.update(
+            { role },
+            { where: { id } },
+        );
 
-    return {
-      message: 'Role updated successfully.',
-    };
-  }
+        return {
+            message: 'Role updated successfully.',
+        };
+    }
 
-  // ================= CHANNELS =================
+    // ================= CHANNELS =================
 
-  async getAllChannels() {
-    return await Channel.findAll();
-  }
+    async getAllChannels() {
+        return await Channel.findAll();
+    }
 
-  async deleteChannel(id: string) {
-    await Channel.destroy({
-      where: { id },
-    });
+    async deleteChannel(id: string) {
+        await Channel.destroy({
+            where: { id },
+        });
 
-    return {
-      message: 'Channel deleted successfully.',
-    };
-  }
+        return {
+            message: 'Channel deleted successfully.',
+        };
+    }
 
-  // ================= MESSAGES =================
+    // ================= MESSAGES =================
 
-  async deleteMessage(id: string) {
-    await Message.destroy({
-      where: { id },
-    });
+    async deleteMessage(id: string) {
+        await Message.destroy({
+            where: { id },
+        });
 
-    return {
-      message: 'Message deleted successfully.',
-    };
-  }
+        return {
+            message: 'Message deleted successfully.',
+        };
+    }
 
-  // ================= DASHBOARD =================
+    // ================= DASHBOARD =================
 
-  async dashboard() {
-    const users = await User.count();
-    const channels = await Channel.count();
-    const messages = await Message.count();
+    async dashboard() {
+        const users = await User.count();
+        const channels = await Channel.count();
+        const messages = await Message.count();
 
-    return {
-      users,
-      channels,
-      messages,
-    };
-  }
+        return {
+            users,
+            channels,
+            messages,
+        };
+    }
 }
