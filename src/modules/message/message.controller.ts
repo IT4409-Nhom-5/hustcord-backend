@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Request, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { MessageService } from './message.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -78,8 +78,17 @@ export class MessageController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid message data',
   })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - JWT token required',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('')
-  async createMessage(@Body() body: MessageDto) {
+  async createMessage(@Body() body: MessageDto, @Request() req: any) {
+    if (body.userId !== req.user.id) {
+      throw new ForbiddenException('Cannot post message as other user');
+    }
     const result = await this.messageService.addMessage(body);
     return result;
   }
