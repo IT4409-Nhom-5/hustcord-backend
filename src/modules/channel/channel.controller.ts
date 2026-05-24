@@ -157,5 +157,49 @@ export class ChannelController {
       req.user.id,
     );
   }
-  
+
+  @ApiOperation({
+    summary: 'Add user to channel',
+    description: 'Add a user to channel participants',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/add-user')
+  async addUserToChannel(
+    @Param('id') channelId: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.channelService.addUserToChannel(channelId, userId);
+  }
+
+  @ApiOperation({
+    summary: 'Add admin to channel',
+    description: 'Make a user admin in channel',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/add-admin')
+  async addAdminToChannel(
+    @Param('id') channelId: string,
+    @Body('userId') userId: string,
+    @Req() req,
+  ) {
+    return this.channelService.addAdminToChannel(channelId, req.user.id, userId);
+  }
+
+  @ApiOperation({
+    summary: 'Remove user from channel',
+    description: 'Remove a user from channel',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/remove-user/:userId')
+  async removeUserFromChannel(
+    @Param('id') channelId: string,
+    @Param('userId') userId: string,
+    @Req() req,
+  ) {
+    return this.channelService.removeUserFromChannel(channelId, req.user.id, userId);
+  }
+
 }

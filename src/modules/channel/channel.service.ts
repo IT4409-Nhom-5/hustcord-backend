@@ -110,8 +110,17 @@ export class ChannelService {
           message: 'User is already in channel.'
         }
       }
+      channel.participants.push(userId);
+      await channel.save();
+      return {
+        statusCode: '200',
+        message: 'User added to channel successfully.'
+      };
     } catch {
-
+      return {
+        statusCode: '500',
+        message: 'Internal server error.'
+      };
     }
   }
   async deleteChannel(id: string) {

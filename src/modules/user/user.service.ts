@@ -161,12 +161,12 @@ export class UserService {
         };
 
         if (status) {
-        User.update(
+        await User.update(
             { requests: sequelize.fn('array_append', sequelize.col('requests'), id) },
             { where: { id:otherId } }
         );
         } else {
-        User.update(
+        await User.update(
             { requests: sequelize.fn('array_remove', sequelize.col('requests'), id) },
             { where: { id:otherId } }
         );
@@ -215,14 +215,14 @@ export class UserService {
         await this.setFriend({ id, otherId, status: false });
         await this.setRequest({ id, otherId, status: false });
 
-        User.update(
+        await User.update(
             { blocked: sequelize.fn('array_append', sequelize.col('blocked'), otherId) },
             {
             where: { id }
             }
         );
         } else {
-        User.update(
+        await User.update(
             { blocked: sequelize.fn('array_remove', sequelize.col('blocked'), otherId) },
             {
             where: { id }
