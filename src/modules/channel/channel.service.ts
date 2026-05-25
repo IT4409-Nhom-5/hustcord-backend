@@ -101,7 +101,29 @@ export class ChannelService {
 
   async createChannel({participants, admins, image, name, description, guildId}: ChannelDto) {
     try {
-      const channel = await Channel.create({participants, admins, image, name, description, guildId});
+      let resolvedParticipants = [...(participants || [])];
+      
+      // If it is a new guild general channel, we automatically add creator's friends
+      if (guildId && participants && participants.length > 0) {
+        const creatorId = participants[0];
+        const creator = await User.findByPk(creatorId);
+        if (creator && creator.friends && creator.friends.length > 0) {
+          for (const friendId of creator.friends) {
+            if (!resolvedParticipants.includes(friendId)) {
+              resolvedParticipants.push(friendId);
+            }
+          }
+        }
+      }
+
+      const channel = await Channel.create({
+        participants: resolvedParticipants,
+        admins,
+        image,
+        name,
+        description,
+        guildId
+      });
       console.log(channel)
       return {
         statusCode: '201',

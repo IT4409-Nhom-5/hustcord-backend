@@ -74,6 +74,28 @@ export class UserController {
     return await this.userService.setFriend(body);
   }
 
+  @Get(':id/requests')
+  async getRequests(@Param('id') id: string) {
+    return await this.userService.getRequests({ id });
+  }
+
+  @Post('request')
+  @UseGuards(JwtAuthGuard)
+  async setRequest(@Body() body: { id: string, otherId: string, status: boolean }) {
+    return await this.userService.setRequest(body);
+  }
+
+  @Get(':id/blocked')
+  async getBlocked(@Param('id') id: string) {
+    return await this.userService.getBlocked({ id });
+  }
+
+  @Post('blocked')
+  @UseGuards(JwtAuthGuard)
+  async setBlocked(@Body() body: { id: string, otherId: string, status: boolean }) {
+    return await this.userService.setBlocked(body);
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put(':id')

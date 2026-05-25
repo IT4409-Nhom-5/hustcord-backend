@@ -3,11 +3,16 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ChannelService } from './channel.service';
 import { ChannelDto } from './dto/channel.dto';
+import { ChannelGateway } from './channel.gateway';
+import { Channel } from './channel.entity';
 
 @ApiTags('channels')
 @Controller('channels')
 export class ChannelController {
-  constructor(private channelService: ChannelService) {}
+  constructor(
+    private channelService: ChannelService,
+    private channelGateway: ChannelGateway,
+  ) {}
 
   @ApiOperation({
     summary: 'Get channel by ID',
@@ -79,6 +84,21 @@ export class ChannelController {
   @Post('')
   async createChannel(@Body() body: ChannelDto) {
     const result = await this.channelService.createChannel(body);
+    
+    if (result.statusCode === '201' && result.channel) {
+      const channel = result.channel;
+      // If it is a sub-channel, we broadcast CHANNEL_CREATE to all guild members
+      if (channel.guildId) {
+        const generalChannel = await Channel.findOne({
+          where: { guildId: channel.guildId }
+        });
+        if (generalChannel && generalChannel.id !== channel.id) {
+          const participants = generalChannel.participants || [];
+          this.channelGateway.emitChannelCreate(channel, participants);
+        }
+      }
+    }
+
     return result;
   }
 
@@ -141,7 +161,33 @@ export class ChannelController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async deleteChannel(@Param('id') id: string) {
+    const channel = await Channel.findByPk(id);
+    if (!channel) {
+      return {
+        statusCode: '404',
+        message: 'Channel not found.'
+      };
+    }
+
     const result = await this.channelService.deleteChannel(id);
+
+    if (result.statusCode === '200') {
+      if (channel.participants && channel.participants.length > 0) {
+        // General channel (Guild)
+        const participants = channel.participants || [];
+        this.channelGateway.emitGuildDelete(channel.guildId, participants);
+      } else {
+        // Sub-channel
+        const generalChannel = await Channel.findOne({
+          where: { guildId: channel.guildId }
+        });
+        if (generalChannel) {
+          const participants = generalChannel.participants || [];
+          this.channelGateway.emitChannelDelete(channel.id, channel.guildId, participants);
+        }
+      }
+    }
+
     return result;
   }
 }
