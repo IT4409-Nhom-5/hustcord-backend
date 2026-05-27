@@ -1,0 +1,30 @@
+name: CI Hustcord Backend
+on: 
+  push: 
+    branches: 
+      - master
+        
+jobs: 
+  deploy:
+    name: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: 
+          noder-version: 20
+      - name: Install dependencies
+        run: npm install
+      
+      - name: run lint
+        run: npm run lint
+
+      - name: Build NestJS app
+        run: npm run build
+      
+      # - name: Trigger render deploy
+      #   run: curl - X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
