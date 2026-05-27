@@ -1,0 +1,31 @@
+name: Test Hustcord Backend
+on: 
+  push: 
+    branches: 
+      - master
+        
+jobs: 
+  deploy:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: 
+          noder-version: 20
+      - name: Install dependencies
+        run: npm install
+      
+      - name: run lint
+        run: npm run lint
+
+      - name: test
+        run: npm test
+
+      
+      # - name: Trigger render deploy
+      #   run: curl - X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
