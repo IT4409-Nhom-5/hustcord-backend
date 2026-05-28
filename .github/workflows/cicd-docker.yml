@@ -29,8 +29,7 @@ jobs:
           context:
           file: Dockerfile
           push: true
-          tags: hustcord/backend:latest
-    
+          tags: cptdat9/hustcord-backend:latest    
     
 #   deploy:
 #     name: Deploy to server
