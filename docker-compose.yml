@@ -1,21 +1,26 @@
 services:
   backend:
-    build: . 
-    container_name: hustcord-backend 
-    restart: unless-stopped1
+    image: cptdat9/hustcord-backend:latest
+    container_name: hustcord-backend
+
+    restart: unless-stopped
 
     ports:
       - "${PORT}:${PORT}"
-    environment:
-      PORT: ${PORT} 
-      JWT_SECRET: ${JWT_SECRET} 
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET} 
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN} 
-      MONGO_URI: ${MONGO_URI} 
-      DB_HOST: ${DB_HOST} 
-      DB_PORT: ${DB_PORT} 
-      DB_USERNAME: ${DB_USERNAME} 
-      DB_PASSWORD: ${DB_PASSWORD} 
-      DB_NAME: ${DB_NAME}
 
-      # docker compose up -d
+    env_file:
+      - .env
+
+    environment:
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+
+      MONGO_URI: ${MONGO_URI}
+
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
