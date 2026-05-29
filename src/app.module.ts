@@ -13,6 +13,7 @@ import { ChannelModule } from './modules/channel/channel.module';
 import { MessageModule } from './modules/message/message.module';
 import { UserModule } from './modules/user/user.module';
 import { VideoModule } from './modules/video/video.module';
+import { MediaModule } from './modules/media/media.module';
 import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
@@ -34,8 +35,9 @@ import { AdminModule } from './modules/admin/admin.module';
     MessageModule,
     UserModule,
     VideoModule,
+    MediaModule,
   ],
-  controllers: [AppController, HealthController, AuthController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

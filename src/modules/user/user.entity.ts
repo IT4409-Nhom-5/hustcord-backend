@@ -12,6 +12,8 @@ import {
 } from 'sequelize-typescript';
 import * as bcrypt from 'bcryptjs';
 
+import { UserRole } from '../../common/enums/user-role.enum';
+
 
 @Table({ createdAt: false, updatedAt: false })
 export class User extends Model {
@@ -32,19 +34,20 @@ export class User extends Model {
     declare password: string;
 
 
-    // nen dung enum cho role.
-    @Column({
-      type: DataType.ENUM('user', 'admin'),
-      defaultValue: 'user'
-    })
-    declare role: 'user' | 'admin';
-
     @Column(DataType.STRING)
     declare about: string;
 
     @Default('https://res.cloudinary.com/dtzs4c2uv/image/upload/v1666326774/noavatar_rxbrbk.png')
     @Column(DataType.STRING)
     declare image: string;
+
+    @Default(UserRole.USER)
+    @Column(DataType.ENUM('admin', 'user'))
+    declare role: string;
+
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    declare isBanned: boolean;
 
     @Column(DataType.ARRAY(DataType.UUID))
     declare friends: Array<string>;

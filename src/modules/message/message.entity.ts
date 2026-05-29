@@ -20,12 +20,38 @@ export class Message extends Model {
     @Column(DataType.UUID)
     declare userId: string;
 
-    @BelongsTo(() => User)
+    @BelongsTo(() => User, 'userId')
     declare user: User;
+
+    @ForeignKey(() => User)
+    @Column(DataType.UUID)
+    declare recipientId: string;
+
+    @BelongsTo(() => User, 'recipientId')
+    declare recipient: User;
 
     @Column(DataType.STRING)
     declare text: string;
 
     @Column(DataType.ARRAY(DataType.STRING))
     declare images: string[];
+
+    @ForeignKey(() => Message)
+    @Column(DataType.UUID)
+    declare parentId: string;
+
+    @BelongsTo(() => Message, 'parentId')
+    declare parent: Message;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        defaultValue: false
+    })
+    declare isRecalled: boolean;
+
+    @Column({
+        type: DataType.JSONB,
+        defaultValue: []
+    })
+    declare reactions: any[];
 }

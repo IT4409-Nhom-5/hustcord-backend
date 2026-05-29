@@ -12,10 +12,10 @@ export class ChannelDto {
   @IsOptional()
   admins?: string[];
 
-  @ApiProperty({ example: 'https://example.com/image.jpg' })
+  @ApiProperty({ example: 'https://example.com/image.jpg', required: false })
   @IsString()
-  @IsNotEmpty()
-  image: string;
+  @IsOptional()
+  image?: string;
 
   @ApiProperty({ example: 'General Chat' })
   @IsString()
@@ -26,4 +26,9 @@ export class ChannelDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @ApiProperty({ example: 'guild-id-1', required: false })
+  @IsString()
+  @IsOptional()
+  guildId?: string;
 }

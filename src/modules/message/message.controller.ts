@@ -1,35 +1,19 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Request, ForbiddenException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Request, ForbiddenException, forwardRef, Req, Inject} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { MessageService } from './message.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { MessageDto } from './dto/message.dto';
+import { ChannelGateway } from '../channel/channel.gateway';
 
 @ApiTags('messages')
 @Controller('messages')
 export class MessageController {
-  constructor(private messageService: MessageService) {}
+  constructor(
+    private messageService: MessageService,
+    @Inject(forwardRef(() => ChannelGateway))
+    private channelGateway: ChannelGateway,
+  ) {}
 
-  @ApiOperation({
-    summary: 'Get message by ID',
-    description: 'Retrieve a specific message by its ID',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Message ID',
-    example: '507f1f77bcf86cd799439011',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Message retrieved successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Message not found',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - JWT token required',
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get(':id')
@@ -38,29 +22,27 @@ export class MessageController {
     return message;
   }
 
-  @ApiOperation({
-    summary: 'Get messages by channel',
-    description: 'Retrieve all messages in a specific channel',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Channel ID',
-    example: '507f1f77bcf86cd799439011',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Messages retrieved successfully',
-    isArray: true,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Channel not found',
-  })
   @Get('channel/:id')
   async getMessagesByChannel(@Param('id') id: string) {
     const message = await this.messageService.getMessagesByChannel({ id });
     return message;
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('direct/:userId/:recipientId')
+  async getDirectMessages(
+    @Param('userId') userId: string,
+    @Param('recipientId') recipientId: string,
+    @Request() req: any
+  ) {
+    if (req.user.id !== userId && req.user.id !== recipientId) {
+      throw new ForbiddenException('Cannot access other users\' direct messages');
+    }
+    const messages = await this.messageService.getDirectMessages({ userId, recipientId });
+    return messages;
+  }
+
 
   @ApiOperation({
     summary: 'Create a new message',
@@ -90,34 +72,14 @@ export class MessageController {
       throw new ForbiddenException('Cannot post message as other user');
     }
     const result = await this.messageService.addMessage(body);
+
+    if (result.statusCode == 201 && result.data) {
+      this.channelGateway.emitMessage(result.data);
+    }
+
     return result;
   }
 
-  @ApiOperation({
-    summary: 'Update a message',
-    description: 'Update an existing message content',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Message ID',
-    example: '507f1f77bcf86cd799439011',
-  })
-  @ApiBody({
-    type: MessageDto,
-    description: 'Updated message content',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Message updated successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Message not found',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - JWT token required',
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put(':id')
@@ -126,32 +88,32 @@ export class MessageController {
     return result;
   }
 
-  @ApiOperation({
-    summary: 'Delete a message',
-    description: 'Delete a message from a channel',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Message ID',
-    example: '507f1f77bcf86cd799439011',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Message deleted successfully',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Message not found',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - JWT token required',
-  })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deleteMessage(@Param('id') id: string) {
-    const result = await this.messageService.deleteMessage({ id });
+  async deleteMessage(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user.id;
+    const result = await this.messageService.deleteMessage({ id, userId });
+    
+    if (result.statusCode == 200 && result.data) {
+      this.channelGateway.emitMessageUpdate(result.data);
+    }
+    
+    return result;
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/react')
+  async toggleReaction(@Param('id') id: string, @Body('emoji') emoji: string, @Req() req: any) {
+    const userId = req.user.id;
+    const username = req.user.username;
+    const result = await this.messageService.toggleReaction({ id, emoji, userId, username });
+
+    if (result.statusCode == 200 && result.data) {
+      this.channelGateway.emitMessageUpdate(result.data);
+    }
+
     return result;
   }
 }

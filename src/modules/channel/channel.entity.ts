@@ -34,4 +34,7 @@ export class Channel extends Model {
 
     @Column(DataType.STRING)
     declare image: string;
+
+    @Column(DataType.UUID)
+    declare guildId: string;
 }

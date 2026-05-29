@@ -29,7 +29,7 @@ export class ChannelService {
 
   async getChannelsByUser(userId: string) {
     try {
-      const channels = await Channel.findAll({
+      const generalChannels = await Channel.findAll({
         where: {
           participants: {
             [Op.contains]: [userId]
@@ -38,10 +38,48 @@ export class ChannelService {
         order: [['updatedAt', 'DESC']],
         attributes: { exclude: ['messages', 'createdAt'] }
       });
+
+      const resolvedGeneralChannels: any[] = [];
+      for (const ch of generalChannels) {
+        const jsonCh = ch.toJSON() as any;
+        const resolvedParticipants: User[] = [];
+        if (jsonCh.participants) {
+          for (const pId of jsonCh.participants) {
+            const user = await User.findByPk(pId, {
+              attributes: ['id', 'username', 'email', 'image']
+            });
+            if (user) {
+              resolvedParticipants.push(user);
+            }
+          }
+        }
+        jsonCh.participants = resolvedParticipants;
+        resolvedGeneralChannels.push(jsonCh);
+      }
+
+      const guildIds = generalChannels
+        .map(c => c.guildId)
+        .filter(id => !!id);
+
+      let subChannels: Channel[] = [];
+      if (guildIds.length > 0) {
+        subChannels = await Channel.findAll({
+          where: {
+            guildId: {
+              [Op.in]: guildIds
+            },
+            id: {
+              [Op.notIn]: generalChannels.map(c => c.id)
+            }
+          },
+          attributes: { exclude: ['messages', 'createdAt'] }
+        });
+      }
+
       const lastMessages: any[] = [];
-      for (let i = 0; i < channels.length; i++) {
+      for (let i = 0; i < generalChannels.length; i++) {
         const lastMessage = await Message.findOne({
-          where: { channelId: channels[i].id },
+          where: { channelId: generalChannels[i].id },
           order: [['createdAt', 'DESC']]
         });
         lastMessages.push(lastMessage);
@@ -49,9 +87,11 @@ export class ChannelService {
 
       return {
         lastMessages,
-        channels
+        generalChannels: resolvedGeneralChannels,
+        subChannels
       };
-    } catch {
+    } catch (err) {
+      console.error('[ChannelService] error in getChannelsByUser:', err);
       return {
         statusCode: '404',
         message: 'User or channel not found.'
@@ -59,9 +99,31 @@ export class ChannelService {
     }
   }
 
-  async createChannel({ participants, admins, image, name, description }: ChannelDto) {
+  async createChannel({participants, admins, image, name, description, guildId}: ChannelDto) {
     try {
-      const channel = await Channel.create({ participants, admins, image, name, description });
+      let resolvedParticipants = [...(participants || [])];
+      
+      // If it is a new guild general channel, we automatically add creator's friends
+      if (guildId && participants && participants.length > 0) {
+        const creatorId = participants[0];
+        const creator = await User.findByPk(creatorId);
+        if (creator && creator.friends && creator.friends.length > 0) {
+          for (const friendId of creator.friends) {
+            if (!resolvedParticipants.includes(friendId)) {
+              resolvedParticipants.push(friendId);
+            }
+          }
+        }
+      }
+
+      const channel = await Channel.create({
+        participants: resolvedParticipants,
+        admins,
+        image,
+        name,
+        description,
+        guildId
+      });
       console.log(channel)
       return {
         statusCode: '201',
@@ -125,15 +187,24 @@ export class ChannelService {
   }
   async deleteChannel(id: string) {
     try {
+      // 1. Clear parentId on replies in this channel to prevent self-reference constraint errors
+      await Message.update({ parentId: null }, { where: { channelId: id } });
+
+      // 2. Destroy all messages associated with the channel
+      await Message.destroy({ where: { channelId: id } });
+
+      // 3. Destroy the channel itself
       await Channel.destroy({ where: { id } });
+
       return {
         statusCode: '200',
         message: 'Channel deleted successfully.'
       };
-    } catch {
+    } catch (error) {
+      console.error(`[ChannelService] Failed to delete channel ${id}:`, error);
       return {
-        statusCode: '404',
-        message: 'Channel not found.'
+        statusCode: '500',
+        message: 'Failed to delete channel.'
       };
     }
   }

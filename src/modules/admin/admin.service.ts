@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import { Op } from "sequelize";
 import { User } from "../user/user.entity";
 import { Channel } from "../channel/channel.entity";
 import { Message } from "../message/message.entity";
-import { CreatedAt } from "sequelize-typescript";
+
 @Injectable()
 export class AdminService {
     async getAllUsers() {
@@ -20,6 +21,30 @@ export class AdminService {
     }
     
     async deleteUser(id: string) {
+        // 1. Clear parentId on replies where the parent message was sent/received by this user
+        await Message.update(
+            { parentId: null },
+            {
+                where: {
+                    [Op.or]: [
+                        { userId: id },
+                        { recipientId: id }
+                    ]
+                }
+            }
+        );
+
+        // 2. Destroy all messages sent or received by this user
+        await Message.destroy({
+            where: {
+                [Op.or]: [
+                    { userId: id },
+                    { recipientId: id }
+                ]
+            }
+        });
+
+        // 3. Destroy the user record
         await User.destroy({
             where: { id },
         });
@@ -50,6 +75,13 @@ export class AdminService {
     }
 
     async deleteChannel(id: string) {
+        // 1. Clear parentId on replies in this channel to prevent self-reference constraint errors
+        await Message.update({ parentId: null }, { where: { channelId: id } });
+
+        // 2. Destroy all messages associated with the channel
+        await Message.destroy({ where: { channelId: id } });
+
+        // 3. Destroy the channel itself
         await Channel.destroy({
             where: { id },
         });

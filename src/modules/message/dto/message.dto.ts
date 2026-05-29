@@ -2,15 +2,20 @@ import { IsString, IsNotEmpty, IsArray, IsOptional, IsUUID } from 'class-validat
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MessageDto {
-  @ApiProperty({ example: 'channel-uuid' })
+  @ApiProperty({ example: 'channel-uuid', required: false })
   @IsUUID()
-  @IsNotEmpty()
-  channelId: string;
+  @IsOptional()
+  channelId?: string;
 
   @ApiProperty({ example: 'user-uuid' })
   @IsUUID()
   @IsNotEmpty()
   userId: string;
+
+  @ApiProperty({ example: 'recipient-uuid', required: false })
+  @IsUUID()
+  @IsOptional()
+  recipientId?: string;
 
   @ApiProperty({ example: 'Hello everyone!' })
   @IsString()
@@ -21,4 +26,9 @@ export class MessageDto {
   @IsArray()
   @IsOptional()
   images?: string[];
+
+  @ApiProperty({ example: 'parent-message-uuid', required: false })
+  @IsUUID()
+  @IsOptional()
+  parentId?: string;
 }
