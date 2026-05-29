@@ -28,6 +28,7 @@
     "@nestjs/platform-socket.io": "^11.1.18",
     "@nestjs/swagger": "^11.2.7",
     "@nestjs/websockets": "^11.1.18",
+    "@supabase/supabase-js": "^2.106.2",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "jsonwebtoken": "^9.0.3",
@@ -55,6 +56,7 @@
     "@types/chai": "^4.3.11",
     "@types/express": "^5.0.0",
     "@types/mocha": "^10.0.6",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/sinon": "^17.0.2",
     "@types/socket.io": "^3.0.1",
@@ -79,17 +81,24 @@
   },
   "mocha": {
     "require": "ts-node/register",
-    "extensions": ["ts"],
+    "extensions": [
+      "ts"
+    ],
     "spec": "test/**/*.spec.ts",
     "timeout": 5000
   },
   "nyc": {
-    "extension": [".ts"],
+    "extension": [
+      ".ts"
+    ],
     "exclude": [
       "**/*.spec.ts",
       "node_modules"
     ],
-    "reporter": ["text", "html"],
+    "reporter": [
+      "text",
+      "html"
+    ],
     "all": true
   }
 }
