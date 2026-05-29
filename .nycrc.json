@@ -1,0 +1,16 @@
+{
+  "extension": [".ts"],
+  "exclude": [
+    "**/*.spec.ts",
+    "node_modules",
+    "dist",
+    "coverage"
+  ],
+  "reporter": ["text", "text-summary", "html"],
+  "all": true,
+  "lines": 70,
+  "functions": 70,
+  "branches": 70,
+  "statements": 70,
+  "cache": false
+}

@@ -1,5 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+class UserResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  username: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty()
+  image: string;
+
+}
 export class LoginResponseDto {
   @ApiProperty({
     example: '200',
@@ -12,6 +26,10 @@ export class LoginResponseDto {
     description: 'JWT access token',
   })
   access_token: string;
+  @ApiProperty({
+    type: UserResponseDto,
+  })
+  user: UserResponseDto;
 }
 
 export class RegisterResponseDto {
@@ -41,3 +59,4 @@ export class LoginRequestDto {
   })
   password: string;
 }
+

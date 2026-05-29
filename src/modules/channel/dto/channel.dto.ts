@@ -1,27 +1,34 @@
-import { IsString, IsOptional, IsArray, IsUUID } from 'class-validator';
+import { IsArray, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class ChannelDto{
-    @IsArray()
-    @IsUUID('all', { each: true })
-    participants:string[];
+export class ChannelDto {
+  @ApiProperty({ example: ['user-id-1', 'user-id-2'] })
+  @IsArray()
+  @IsNotEmpty()
+  participants: string[];
 
-    @IsOptional()
-    @IsArray()
-    @IsUUID('all', { each: true })
-    admins?:string[];
+  @ApiProperty({ example: ['admin-id-1'], required: false })
+  @IsArray()
+  @IsOptional()
+  admins?: string[];
 
-    @IsOptional()
-    @IsString()
-    image:string;
+  @ApiProperty({ example: 'https://example.com/image.jpg', required: false })
+  @IsString()
+  @IsOptional()
+  image?: string;
 
-    @IsString()
-    name:string;
+  @ApiProperty({ example: 'General Chat' })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    description:string;
+  @ApiProperty({ example: 'Channel for general discussions' })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @IsOptional()
-    @IsString()
-    guildId?: string;
-}
+  @ApiProperty({ example: 'guild-id-1', required: false })
+  @IsString()
+  @IsOptional()
+  guildId?: string;
+}

@@ -322,4 +322,84 @@ export class VideoController {
       createdAt: session.createdAt,
     };
   }
+
+  @ApiOperation({
+    summary: 'Store WebRTC offer for a call',
+    description: 'Store the SDP offer for a given callId',
+  })
+  @ApiParam({ name: 'callId', description: 'The video call ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { offer: { type: 'object' } },
+      required: ['offer'],
+    },
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('call/:callId/offer')
+  async storeOffer(
+    @Param('callId') callId: string,
+    @Body() body: { offer: any },
+  ) {
+    const ok = this.videoService.storeOffer(callId, body.offer);
+    if (!ok) {
+      return { statusCode: 404, message: 'Video call not found' };
+    }
+    return { statusCode: 200, message: 'Offer stored' };
+  }
+
+  @ApiOperation({
+    summary: 'Store WebRTC answer for a call',
+    description: 'Store the SDP answer for a given callId',
+  })
+  @ApiParam({ name: 'callId', description: 'The video call ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { answer: { type: 'object' } },
+      required: ['answer'],
+    },
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('call/:callId/answer')
+  async storeAnswer(
+    @Param('callId') callId: string,
+    @Body() body: { answer: any },
+  ) {
+    const ok = this.videoService.storeAnswer(callId, body.answer);
+    if (!ok) {
+      return { statusCode: 404, message: 'Video call not found' };
+    }
+    return { statusCode: 200, message: 'Answer stored' };
+  }
+
+  @ApiOperation({
+    summary: 'Get stored offer for a call',
+    description: 'Retrieve the stored SDP offer for a call',
+  })
+  @ApiParam({ name: 'callId', description: 'The video call ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('call/:callId/offer')
+  async getOffer(@Param('callId') callId: string) {
+    const offer = this.videoService.getOffer(callId);
+    if (!offer) return { statusCode: 404, message: 'Offer not found' };
+    return { offer };
+  }
+
+  @ApiOperation({
+    summary: 'Get stored answer for a call',
+    description: 'Retrieve the stored SDP answer for a call',
+  })
+  @ApiParam({ name: 'callId', description: 'The video call ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('call/:callId/answer')
+  async getAnswer(@Param('callId') callId: string) {
+    const answer = this.videoService.getAnswer(callId);
+    if (!answer) return { statusCode: 404, message: 'Answer not found' };
+    return { answer };
+  }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards, HttpStatus } from "@nestjs/common";
+import { Body, Controller, Get, Param, Put, Post, Delete, UseGuards, HttpStatus, Request, ForbiddenException } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { UserService } from "./user.service";
@@ -99,7 +99,14 @@ export class UserController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async updateUser(@Param('id') id: string, @Body() body: UserDto) {
+  async updateUser(
+    @Param('id') id: string,
+    @Body() body: UserDto,
+    @Request() req: any,
+  ) {
+    if (req.user.id !== id) {
+      throw new ForbiddenException('Cannot update other user profile');
+    }
     return await this.userService.updateUser({ ...body, id });
   }
 }

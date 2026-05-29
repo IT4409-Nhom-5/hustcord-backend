@@ -21,7 +21,7 @@ export class Channel extends Model {
     declare participants: string[];
 
     @Column(DataType.ARRAY(DataType.UUID()))
-    declare admins: string[];
+    declare admin: string[];
 
     @Column(DataType.STRING)
     declare description: string;

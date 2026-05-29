@@ -14,7 +14,7 @@ import { MessageModule } from './modules/message/message.module';
 import { UserModule } from './modules/user/user.module';
 import { VideoModule } from './modules/video/video.module';
 import { MediaModule } from './modules/media/media.module';
-
+import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,6 +28,7 @@ import { MediaModule } from './modules/media/media.module';
     //   }),
     //   inject: [ConfigService],
     // }),
+    AdminModule,
     PostgresModule,
     AuthModule,
     ChannelModule,

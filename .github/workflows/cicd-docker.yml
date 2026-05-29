@@ -1,0 +1,51 @@
+name: Hustcord Backend CI/CD Docker
+on: 
+  push: 
+    branches:
+      - master
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+    # Lay source code tu github
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      
+      # Chuan bi moi truong build Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Dag nhap 
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      # 4. build docker image va push len DockerHub, luu y trong tags: co dang dockerhub-username/image-name:tag
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context:
+          file: Dockerfile
+          push: true
+          tags: cptdat9/hustcord-backend:latest    
+    
+#   deploy:
+#     name: Deploy to server
+#     runs-on: ubuntu-latest
+#     needs: build-and-push
+    
+#     steps:
+#         - name: Deploy via SSH
+#           uses: appleboy/ssh-action@v1.0.3
+#           with: 
+#             host: ${{ secrets.SERVER_HOST }}
+#             username: ${{ secrets.SERVER_USER }}
+#             key: ${{ secrets.SERVER_SSH_KEY }}
+#             script: |
+#                 cd /opt/fullstack-apt  
+#                 docker compose pull
+#                 docker compose down
+#                 docker compose up -d
+# #             # can co vps  thi moi chay duoc, chua co thi can ssh vao ip cua toi. Sau do tao folder.

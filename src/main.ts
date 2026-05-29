@@ -6,21 +6,20 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads/',
-  });
+  const app = await NestFactory.create(AppModule);
+  
+  // CORS configuration - restrict to specific origins
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174'];
+  
   app.enableCors({
-    origin: true,
+    origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
-  /* 
-  app.enableCors({
-  origin: ['http://127.0.0.1:5174', 'http://localhost:5174'],
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  credentials: true,
-});
-  */
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

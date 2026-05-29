@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Inject, forwardRef, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, HttpStatus, Request, ForbiddenException, forwardRef, Req, Inject} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { MessageService } from './message.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -28,14 +28,49 @@ export class MessageController {
     return message;
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('direct/:userId/:recipientId')
-  async getDirectMessages(@Param('userId') userId: string, @Param('recipientId') recipientId: string) {
+  async getDirectMessages(
+    @Param('userId') userId: string,
+    @Param('recipientId') recipientId: string,
+    @Request() req: any
+  ) {
+    if (req.user.id !== userId && req.user.id !== recipientId) {
+      throw new ForbiddenException('Cannot access other users\' direct messages');
+    }
     const messages = await this.messageService.getDirectMessages({ userId, recipientId });
     return messages;
   }
 
+
+  @ApiOperation({
+    summary: 'Create a new message',
+    description: 'Post a new message to a channel',
+  })
+  @ApiBody({
+    type: MessageDto,
+    description: 'Message content',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Message created successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid message data',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - JWT token required',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('')
-  async createMessage(@Body() body: MessageDto) {
+  async createMessage(@Body() body: MessageDto, @Request() req: any) {
+    if (body.userId !== req.user.id) {
+      throw new ForbiddenException('Cannot post message as other user');
+    }
     const result = await this.messageService.addMessage(body);
 
     if (result.statusCode == 201 && result.data) {
