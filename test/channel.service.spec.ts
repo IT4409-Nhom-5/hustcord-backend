@@ -83,7 +83,7 @@ describe('ChannelService', () => {
 
       const result = await channelService.getChannelsByUser('u1') as any;
 
-      expect(result.channels).to.have.lengthOf(2);
+      expect(result.generalChannels).to.have.lengthOf(2);
       expect(result.lastMessages).to.have.lengthOf(2);
     });
 
