@@ -41,7 +41,7 @@ export class ChannelService {
 
       const resolvedGeneralChannels: any[] = [];
       for (const ch of generalChannels) {
-        const jsonCh = ch.toJSON() as any;
+        const jsonCh = (typeof ch.toJSON === 'function' ? ch.toJSON() : ch) as any;
         const resolvedParticipants: User[] = [];
         if (jsonCh.participants) {
           for (const pId of jsonCh.participants) {

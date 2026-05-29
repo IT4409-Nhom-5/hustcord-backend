@@ -82,7 +82,7 @@ export class MessageService {
       });
 
       return {
-        statusCode: 201,
+        statusCode: '201',
         message: 'Message created successfully.',
         data: messageWithUser
       };
