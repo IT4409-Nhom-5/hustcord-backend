@@ -37,8 +37,10 @@ export class MediaController {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const port = process.env.PORT || 3001;
-    const url = `http://localhost:${port}/uploads/${file.filename}`;
+    const baseUrl =
+      process.env.HUSTCORD_BACKEND_URL?.replace(/\/$/, '') ||
+      `http://localhost:${process.env.PORT || 3000}`;
+    const url = `${baseUrl}/uploads/${file.filename}`;
     return { url };
   }
 }
