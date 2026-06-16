@@ -8,7 +8,11 @@ import {
 import { Server, Socket } from 'socket.io';
 import { VideoService } from './video.service';
 
-@WebSocketGateway({ namespace: 'video', cors: true })
+// Khớp cả "/video" và "//video". Frontend dựng URL là `${VITE_API_URL}/video`,
+// mà VITE_API_URL có dấu "/" ở cuối -> client deployed kết nối vào namespace
+// "//video", còn dev local (không có "/" cuối) thì vào "/video". Regex này
+// nhận cả hai; các client cùng URL sẽ ở chung một namespace nên vẫn thấy nhau.
+@WebSocketGateway({ namespace: /^\/+video$/, cors: true })
 export class VideoGateway {
   @WebSocketServer()
   server: Server;
